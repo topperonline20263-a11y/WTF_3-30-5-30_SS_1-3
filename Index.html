@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TOPPER Student Portal</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --bg-dark: #0b1120; --card-bg: #151f32; --card-border: #1e293b;
+      --accent-blue: #38bdf8; --accent-navy: #1e40af; --text-main: #f8fafc;
+      --text-muted: #94a3b8; --success: #22c55e; --warning: #f59e0b; --danger: #ef4444;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-dark); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 75px; overflow-x: hidden; }
+
+    /* Top Banner Bar */
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; background: linear-gradient(180deg, #111a2e 0%, var(--bg-dark) 100%); border-bottom: 1px solid var(--card-border); position: sticky; top: 0; z-index: 50; }
+    .brand-container { display: flex; align-items: center; gap: 12px; }
+    .brand-logo { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-blue); background-color: #ffffff; }
+    .brand-title { font-size: 16px; font-weight: 700; letter-spacing: 0.5px; color: #ffffff; }
+    .brand-sub { font-size: 11px; color: var(--accent-blue); font-weight: 500; }
+    .status-badge { font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .status-approved { background: rgba(34, 197, 94, 0.15); color: var(--success); border: 1px solid rgba(34, 197, 94, 0.3); }
+
+    .container { padding: 16px; max-width: 480px; margin: 0 auto; }
+    
+    /* Cards */
+    .card { background-color: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 18px; margin-bottom: 14px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25); }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; font-size: 14px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 13.5px; }
+    .info-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .info-label { color: var(--text-muted); }
+    .info-value { font-weight: 500; color: var(--text-main); text-align: right; word-break: break-all; }
+    .schedule-time { color: var(--accent-blue); font-weight: 600; }
+
+    /* Recordings */
+    .recording-item { background: #0f172a; border: 1px solid var(--card-border); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+    .rec-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .rec-date { font-weight: 700; font-size: 14px; color: var(--text-main); }
+    .badge { font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 600; }
+    .badge-approved { background: rgba(34, 197, 94, 0.15); color: var(--success); }
+    .badge-expired { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+    .badge-pending { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+
+    .btn { display: block; width: 100%; text-align: center; padding: 11px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 13.5px; margin-top: 10px; transition: opacity 0.2s; }
+    .btn-primary { background: linear-gradient(135deg, #2563eb 0%, var(--accent-blue) 100%); color: #ffffff; }
+    .btn-disabled { background: #1e293b; color: var(--text-muted); pointer-events: none; }
+
+    /* Bottom Nav */
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 62px; background: #0f172a; border-top: 1px solid var(--card-border); display: flex; justify-content: space-around; align-items: center; z-index: 100; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 11px; color: var(--text-muted); cursor: pointer; gap: 4px; transition: color 0.2s; }
+    .nav-item.active { color: var(--accent-blue); }
+
+    /* Unregistered & Loaders */
+    .unreg-container { text-align: center; padding: 40px 20px; }
+    .unreg-icon { font-size: 54px; color: var(--warning); margin-bottom: 16px; }
+    #loader { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 70vh; color: var(--text-muted); gap: 12px; }
+    .spinner { width: 36px; height: 36px; border: 3px solid rgba(56, 189, 248, 0.2); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Settings Overlay */
+    #settings-view { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 200; overflow-y: auto; display: none; padding-bottom: 30px; }
+    .settings-header { display: flex; align-items: center; gap: 15px; padding: 18px; border-bottom: 1px solid var(--card-border); background: #111a2e; }
+    .settings-title { font-size: 18px; font-weight: 700; color: #fff; }
+    .back-btn { font-size: 20px; color: var(--accent-blue); cursor: pointer; }
+    
+    .warning-card { background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 15px; color: #fef3c7; font-size: 13px; line-height: 1.5; display: none; margin-top: 15px; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Banner Bar -->
+  <div class="top-bar">
+    <div class="brand-container">
+      <img src="logo.jpeg" alt="TOPPER" class="brand-logo" onerror="this.src='topperLogo.jpeg'">
+      <div>
+        <div class="brand-title">TOPPER</div>
+        <div class="brand-sub">Student Portal</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <div id="top-status-badge" class="status-badge status-approved" style="display:none;">
+        <i class="fa-solid fa-circle-check"></i> <span id="s-status-top">Active</span>
+      </div>
+      <i class="fa-solid fa-gear" onclick="toggleSettings(true)" style="font-size: 18px; color: var(--text-muted); cursor: pointer; display: none;" id="gear-icon"></i>
+    </div>
+  </div>
+
+  <!-- Loading Screen -->
+  <div id="loader"><div class="spinner"></div><div style="font-size: 13px;">Loading Student Data...</div></div>
+
+  <!-- App Views -->
+  <div id="content" style="display:none;" class="container">
+    
+    <!-- Tab 1: Dashboard -->
+    <div id="tab-dashboard" class="tab-pane">
+      <div class="card">
+        <div class="card-header"><span>Student Information</span><i class="fa-solid fa-user-graduate" style="color: var(--accent-blue);"></i></div>
+        <div class="info-row"><span class="info-label">Full Name</span><span class="info-value" id="s-name">-</span></div>
+        <div class="info-row"><span class="info-label">Zoom Email</span><span class="info-value" id="s-zoom">-</span></div>
+        <div class="info-row"><span class="info-label">Drive Gmail</span><span class="info-value" id="s-gmail">-</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span>Class Schedule</span><i class="fa-solid fa-calendar-week" style="color: var(--accent-blue);"></i></div>
+        <div id="schedule-list" style="margin-bottom: 15px;"></div>
+        <div class="card-header" style="border-top: 1px solid var(--card-border); padding-top: 15px; margin-top: 5px;">
+          <span>Zoom Meeting Info</span><i class="fa-solid fa-video" style="color: var(--success);"></i>
+        </div>
+        <div class="info-row"><span class="info-label">Meeting ID</span><span class="info-value" id="s-meeting-id" style="letter-spacing: 1px; font-weight: 700;">-</span></div>
+        <div class="info-row"><span class="info-label">Passcode</span><span class="info-value" id="s-passcode">-</span></div>
+      </div>
+    </div>
+
+    <!-- Tab 2: Recordings -->
+    <div id="tab-recordings" class="tab-pane" style="display:none;">
+      <div class="card">
+        <div class="card-header"><span>Approved Recordings</span><i class="fa-solid fa-video" style="color: var(--accent-blue);"></i></div>
+        <div id="recordings-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Overlay -->
+  <div id="settings-view">
+    <div class="settings-header">
+      <i class="fa-solid fa-arrow-left back-btn" onclick="toggleSettings(false)"></i>
+      <div class="settings-title">Account Insights</div>
+    </div>
+    <div class="container">
+      <div class="card">
+        <div class="card-header"><span>Engagement Metrics</span><i class="fa-solid fa-chart-line" style="color: var(--accent-blue);"></i></div>
+        <div class="info-row">
+          <span class="info-label">Recorded Attendance</span>
+          <span class="info-value" id="set-att" style="font-weight:700; color:var(--accent-blue); font-size:16px;">-</span>
+        </div>
+        
+        <!-- Subtle Warning Block -->
+        <div id="set-warning" class="warning-card">
+          <i class="fa-solid fa-circle-exclamation" style="margin-right:5px; color:var(--warning);"></i>
+          **System Notice:** Our records indicate lower than average engagement, frequent absences, or excessive leave requests. Please prioritize active participation to get the most out of your course and maintain good standing.
+        </div>
+      </div>
+      
+      <div style="text-align:center; margin-top: 30px; font-size:11px; color:var(--text-muted);">
+        TOPPER Educational System<br>Version 2.1.0
+      </div>
+    </div>
+  </div>
+
+  <!-- Unregistered Screen -->
+  <div id="unregistered-view" style="display:none;" class="container">
+    <div class="card unreg-container">
+      <i class="fa-solid fa-triangle-exclamation unreg-icon"></i><h3 style="margin-top: 0;">Account Not Registered</h3>
+      <p style="color: var(--text-muted); font-size: 13.5px; line-height: 1.5;">Your Telegram account is not yet registered or approved.</p>
+      <div style="background: #0f172a; padding: 12px; border-radius: 8px; font-size: 12.5px; color: var(--accent-blue); margin-top: 15px;">Please return to the bot chat to complete registration.</div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="switchTab('dashboard', this)"><i class="fa-solid fa-house"></i><span>Home</span></div>
+    <div class="nav-item" onclick="switchTab('recordings', this)"><i class="fa-solid fa-play"></i><span>Recordings</span></div>
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    if (tg) { tg.expand(); tg.ready(); }
+
+    const API_URL = "https://script.google.com/macros/s/AKfycbzAufKn4e8vT2Ysr2wnXQ9YH1j7DCrF2pkkBrOkh1Vqle8u2CUWORrN5QB01kPsuJdsMA/exec";
+
+    let chatId = "";
+    if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+      chatId = tg.initDataUnsafe.user.id.toString();
+    }
+
+    if (chatId) {
+      fetch(`${API_URL}?chatId=${chatId}`)
+        .then(response => { if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json(); })
+        .then(data => renderApp(data))
+        .catch(err => { document.getElementById('loader').innerHTML = `<div style="color:var(--danger); text-align:center; padding: 20px;">Failed to connect to database.</div>`; });
+    } else {
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('unregistered-view').style.display = 'block';
+    }
+
+    function renderApp(data) {
+      document.getElementById('loader').style.display = 'none';
+      if (!data.success) { document.getElementById('unregistered-view').style.display = 'block'; return; }
+
+      document.getElementById('content').style.display = 'block';
+      document.getElementById('top-status-badge').style.display = 'flex';
+      document.getElementById('gear-icon').style.display = 'block';
+
+      // Profile & Schedule
+      document.getElementById('s-name').innerText = data.name || "N/A";
+      document.getElementById('s-zoom').innerText = data.zoomEmail || "N/A";
+      document.getElementById('s-gmail').innerText = data.gmail || "N/A";
+      document.getElementById('s-status-top').innerText = data.status || "Active";
+      document.getElementById('s-meeting-id').innerText = data.meetingId || "N/A";
+      document.getElementById('s-passcode').innerText = data.passcode || "N/A";
+
+      const schedContainer = document.getElementById('schedule-list');
+      if (data.schedule && data.schedule.length > 0) {
+        schedContainer.innerHTML = data.schedule.map(item => `<div class="info-row"><span class="info-label">${item.day}</span><span class="info-value schedule-time">${item.time}</span></div>`).join('');
+      } else {
+        schedContainer.innerHTML = "<div style='color:var(--text-muted); font-size:13px;'>No schedule available.</div>";
+      }
+
+      // Settings Data
+      document.getElementById('set-att').innerText = data.attendance || "0.0%";
+      if (data.hasWarnings) document.getElementById('set-warning').style.display = 'block';
+
+      // Recordings
+      const recContainer = document.getElementById('recordings-list');
+      if (!data.recordings || data.recordings.length === 0) {
+        recContainer.innerHTML = "<div style='color:var(--text-muted); font-size:13px; text-align:center; padding:10px;'>No recording requests on file.</div>";
+      } else {
+        recContainer.innerHTML = data.recordings.map(r => {
+          let badgeClass = r.status === 'Approved' ? 'badge-approved' : (r.isExpired ? 'badge-expired' : 'badge-pending');
+          let statusText = r.isExpired ? 'Expired' : r.status;
+          let html = `<div class="recording-item"><div class="rec-top"><div class="rec-date"><i class="fa-regular fa-calendar-days" style="margin-right:6px; color:var(--accent-blue);"></i>${r.date}</div><span class="badge ${badgeClass}">${statusText}</span></div>`;
+          if (r.status === 'Approved' && !r.isExpired && r.url) {
+            html += `<div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;"><i class="fa-regular fa-clock" style="margin-right:4px;"></i>Deadline: <span style="color:var(--text-main); font-weight:600;">${r.deadline}</span></div><a href="${r.url}" class="btn btn-primary" target="_blank"><i class="fa-solid fa-play" style="margin-right:6px;"></i>Watch Recording</a>`;
+          } else if (r.status === 'Approved' && r.isExpired) {
+            html += `<div class="btn btn-disabled"><i class="fa-solid fa-lock" style="margin-right:6px;"></i>Access Expired</div>`;
+          }
+          return html + `</div>`;
+        }).join('');
+      }
+    }
+
+    function switchTab(tabName, el) {
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('tab-dashboard').style.display = tabName === 'dashboard' ? 'block' : 'none';
+      document.getElementById('tab-recordings').style.display = tabName === 'recordings' ? 'block' : 'none';
+    }
+
+    function toggleSettings(show) {
+      document.getElementById('settings-view').style.display = show ? 'block' : 'none';
+    }
+  </script>
+</body>
+</html>
